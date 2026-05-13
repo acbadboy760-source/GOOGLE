@@ -1,0 +1,37 @@
+name: Google Play Downloader
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: 'شناسه App ID گوگل پلی (مثلاً com.whatsapp)'
+        required: true
+        default: 'com.spotify.music'
+  schedule:
+    - cron: '0 2 * * 0'  # هر یکشنبه ساعت 2 صبح (برای آپدیت هفتگی)
+
+jobs:
+  download-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install gplaycli
+        run: |
+          pip3 install gplaycli
+
+      - name: Download APK from Google Play
+        run: |
+          APP_ID="${{ github.event.inputs.app_id || 'com.spotify.music' }}"
+          echo "Start downloading $APP_ID ..."
+          gplaycli -d "$APP_ID" -f ./
+          mkdir -p apk-output
+          mv *.apk apk-output/ 2>/dev/null || echo "No APK file found"
+          ls -la apk-output/
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk
+          path: apk-output/
