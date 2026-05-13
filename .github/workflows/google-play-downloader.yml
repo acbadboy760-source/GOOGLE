@@ -1,14 +1,14 @@
-name: Google Play Downloader
+name: Google Play Downloader (Modern)
 
 on:
   workflow_dispatch:
     inputs:
       app_id:
-        description: 'شناسه App ID گوگل پلی (مثلاً com.whatsapp)'
+        description: 'شناسه App ID گوگل پلی (مثلاً com.deepseek.chat)'
         required: true
         default: 'com.deepseek.chat'
   schedule:
-    - cron: '0 2 * * 0'  # هر یکشنبه ساعت 2 صبح UTC
+    - cron: '0 2 * * 0'  # هر یکشنبه ساعت ۲ صبح UTC
 
 jobs:
   download-apk:
@@ -17,19 +17,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install gplaycli and fix protobuf
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install google-play-scraper
         run: |
-          pip3 install gplaycli
-          pip3 install protobuf==3.20.3
+          pip install google-play-scraper
 
       - name: Download APK from Google Play
         run: |
           APP_ID="${{ github.event.inputs.app_id || 'com.deepseek.chat' }}"
-          echo "Start downloading $APP_ID ..."
-          gplaycli -d "$APP_ID" -f ./
-          mkdir -p apk-output
-          mv *.apk apk-output/ 2>/dev/null || echo "No APK file found"
-          ls -la apk-output/
+          echo "📱 Downloading $APP_ID ..."
+          python -c "
+          from google_play_scraper import download
+          import os
+
+          os.makedirs('apk-output', exist_ok=True)
+          filename = 'apk-output/${APP_ID}.apk'
+          result = download('${APP_ID}', filename)
+          print(f'✅ Downloaded: {result}')
+          " || { echo "❌ Download failed, trying alternative method..."; exit 1; }
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
