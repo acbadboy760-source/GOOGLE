@@ -6,9 +6,9 @@ on:
       app_id:
         description: 'شناسه App ID گوگل پلی (مثلاً com.whatsapp)'
         required: true
-        default: 'com.spotify.music'
+        default: 'com.deepseek.chat'
   schedule:
-    - cron: '0 2 * * 0'  # هر یکشنبه ساعت 2 صبح (برای آپدیت هفتگی)
+    - cron: '0 2 * * 0'  # هر یکشنبه ساعت 2 صبح UTC
 
 jobs:
   download-apk:
@@ -17,13 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install gplaycli
+      - name: Install gplaycli and fix protobuf
         run: |
           pip3 install gplaycli
+          pip3 install protobuf==3.20.3
 
       - name: Download APK from Google Play
         run: |
-          APP_ID="${{ github.event.inputs.app_id || 'com.spotify.music' }}"
+          APP_ID="${{ github.event.inputs.app_id || 'com.deepseek.chat' }}"
           echo "Start downloading $APP_ID ..."
           gplaycli -d "$APP_ID" -f ./
           mkdir -p apk-output
